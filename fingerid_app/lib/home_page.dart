@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'main.dart'; // 👈 important (to go back to login page)
+
 class HomePage extends StatelessWidget {
   final String message;
   final String userId;
@@ -14,9 +16,28 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  // ================= BACK TO LOGIN =================
+  void goBackToLogin(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const FingerIDApp()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Home"),
+        backgroundColor: const Color(0xff1e293b),
+
+        // ✅ BACK BUTTON
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => goBackToLogin(context),
+        ),
+      ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

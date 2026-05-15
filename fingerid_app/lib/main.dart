@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:local_auth/local_auth.dart';
 import 'dart:convert';
 
+import 'storage/user_storage.dart';
 import 'home_page.dart';
-import 'scan_page.dart';
 
 void main() {
   runApp(const FingerIDApp());
@@ -16,8 +17,6 @@ class FingerIDApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "FingerID System",
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.blue),
       home: const FingerHomePage(),
     );
   }
@@ -34,6 +33,8 @@ class _FingerHomePageState extends State<FingerHomePage> {
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
 
+  final LocalAuthentication auth = LocalAuthentication();
+
   final String baseUrl = "http://192.168.0.106:5176";
 
   String status = "";
@@ -42,8 +43,31 @@ class _FingerHomePageState extends State<FingerHomePage> {
 
   bool loading = false;
 
-  // ================= REGISTER =================
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
+  }
+
+  Future<void> loadUser() async {
+    final id = await UserStorage.getUserId();
+    if (id != null) {
+      setState(() {
+        userId = id;
+        status = "Welcome back 👋";
+      });
+    }
+  }
+
   Future<void> register() async {
+    final name = nameCtrl.text.trim();
+    final email = emailCtrl.text.trim();
+
+    if (name.isEmpty || email.isEmpty) {
+      setState(() => error = "Name and Email required");
+      return;
+    }
+
     setState(() {
       loading = true;
       error = "";
@@ -54,8 +78,8 @@ class _FingerHomePageState extends State<FingerHomePage> {
         Uri.parse("$baseUrl/api/users/register"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "name": nameCtrl.text.trim(),
-          "email": emailCtrl.text.trim(),
+          "name": name,
+          "email": email,
           "deviceId": "mobile_01",
         }),
       );
@@ -63,40 +87,78 @@ class _FingerHomePageState extends State<FingerHomePage> {
       final data = jsonDecode(res.body);
 
       if (res.statusCode == 200) {
+        userId = data["userId"];
+        await UserStorage.saveUserId(userId!);
+
         setState(() {
-          userId = data["userId"];
-          status = "Registration Successful 🎉";
+          status = "Registered Successfully 🎉";
         });
       } else {
-        setState(() {
-          error = data.toString();
-        });
+        setState(() => error = data.toString());
       }
     } catch (e) {
-      setState(() => error = e.toString());
+      setState(() => error = "Server error: $e");
     } finally {
       setState(() => loading = false);
     }
   }
 
-  // ================= GO TO SCAN PAGE =================
-  void goToLogin() {
+  // ================= UPDATED LOGIN FUNCTION =================
+  Future<void> loginWithFingerprint() async {
     if (userId == null) {
-      setState(() {
-        error = "Please register first";
-      });
+      setState(() => error = "Please register first");
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScanPage(userId: userId!, baseUrl: baseUrl),
+    bool authOk = await auth.authenticate(
+      localizedReason: "Scan fingerprint to login",
+      options: const AuthenticationOptions(
+        biometricOnly: true,
+        stickyAuth: true,
       ),
     );
+
+    if (!authOk) {
+      setState(() => error = "Fingerprint failed");
+      return;
+    }
+
+    final res = await http.post(
+      Uri.parse("$baseUrl/api/fingerprint/verify"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"userId": userId, "deviceId": "mobile_01"}),
+    );
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+
+      setState(() {
+        status = "Login Success 🎉 ${data["message"]}";
+        error = "";
+      });
+
+      // 🔥 NAVIGATE TO HOME PAGE (NEW PART)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(
+            message: data["message"] ?? "Login Successful",
+            userId: userId!,
+          ),
+        ),
+      );
+    } else {
+      setState(() => error = "Login failed");
+    }
   }
 
-  // ================= UI =================
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    emailCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,7 +175,6 @@ class _FingerHomePageState extends State<FingerHomePage> {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Card(
-                elevation: 12,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -121,14 +182,8 @@ class _FingerHomePageState extends State<FingerHomePage> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.fingerprint,
-                        size: 80,
-                        color: Colors.blue,
-                      ),
-
+                      const Icon(Icons.fingerprint, size: 80),
                       const SizedBox(height: 10),
-
                       const Text(
                         "FingerID System",
                         style: TextStyle(
@@ -136,50 +191,35 @@ class _FingerHomePageState extends State<FingerHomePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 20),
 
                       TextField(
                         controller: nameCtrl,
                         decoration: const InputDecoration(
                           labelText: "Full Name",
-                          border: OutlineInputBorder(),
                         ),
                       ),
 
-                      const SizedBox(height: 10),
-
                       TextField(
                         controller: emailCtrl,
-                        decoration: const InputDecoration(
-                          labelText: "Email",
-                          border: OutlineInputBorder(),
-                        ),
+                        decoration: const InputDecoration(labelText: "Email"),
                       ),
 
                       const SizedBox(height: 20),
 
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: loading ? null : register,
-                          icon: const Icon(Icons.person_add),
-                          label: const Text("Register"),
-                        ),
+                      ElevatedButton(
+                        onPressed: loading ? null : register,
+                        child: const Text("Register"),
                       ),
 
                       const SizedBox(height: 10),
 
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: goToLogin,
-                          icon: const Icon(Icons.fingerprint),
-                          label: const Text("Login with Fingerprint"),
-                        ),
+                      ElevatedButton(
+                        onPressed: loginWithFingerprint,
+                        child: const Text("Login with Fingerprint"),
                       ),
 
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 20),
 
                       if (status.isNotEmpty)
                         Text(
