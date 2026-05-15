@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:local_auth/local_auth.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import 'home_page.dart';
+import 'scan_page.dart';
 
 void main() {
   runApp(const FingerIDApp());
@@ -33,89 +33,67 @@ class FingerHomePage extends StatefulWidget {
 class _FingerHomePageState extends State<FingerHomePage> {
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
-  final auth = LocalAuthentication();
 
   final String baseUrl = "http://192.168.0.106:5176";
 
   String status = "";
-  String loginError = "";
+  String error = "";
   String? userId;
 
   bool loading = false;
 
   // ================= REGISTER =================
   Future<void> register() async {
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = "";
+    });
 
-    final res = await http.post(
-      Uri.parse("$baseUrl/api/users/register"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "name": nameCtrl.text,
-        "email": emailCtrl.text,
-        "deviceId": "mobile_01",
-      }),
-    );
+    try {
+      final res = await http.post(
+        Uri.parse("$baseUrl/api/users/register"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": nameCtrl.text.trim(),
+          "email": emailCtrl.text.trim(),
+          "deviceId": "mobile_01",
+        }),
+      );
 
-    setState(() => loading = false);
-
-    if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      setState(() {
-        userId = data["userId"];
-        status = "Registration Successful 🎉";
-        loginError = "";
-      });
-    } else {
-      setState(() {
-        status = "";
-        loginError = res.body;
-      });
+      if (res.statusCode == 200) {
+        setState(() {
+          userId = data["userId"];
+          status = "Registration Successful 🎉";
+        });
+      } else {
+        setState(() {
+          error = data.toString();
+        });
+      }
+    } catch (e) {
+      setState(() => error = e.toString());
+    } finally {
+      setState(() => loading = false);
     }
   }
 
-  // ================= LOGIN =================
-  Future<void> login() async {
+  // ================= GO TO SCAN PAGE =================
+  void goToLogin() {
     if (userId == null) {
-      setState(() => loginError = "Please register first");
+      setState(() {
+        error = "Please register first";
+      });
       return;
     }
 
-    bool success = await auth.authenticate(
-      localizedReason: "Verify fingerprint",
-      options: const AuthenticationOptions(
-        biometricOnly: true,
-        stickyAuth: true,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ScanPage(userId: userId!, baseUrl: baseUrl),
       ),
     );
-
-    if (!success) {
-      setState(() => loginError = "Fingerprint authentication failed");
-      return;
-    }
-
-    final res = await http.post(
-      Uri.parse("$baseUrl/api/fingerprint/verify"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"userId": userId, "deviceId": "mobile_01"}),
-    );
-
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              HomePage(message: data["message"], userId: data["userId"]),
-        ),
-      );
-    } else {
-      setState(() {
-        loginError = res.body;
-      });
-    }
   }
 
   // ================= UI =================
@@ -135,27 +113,26 @@ class _FingerHomePageState extends State<FingerHomePage> {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Card(
-                elevation: 10,
+                elevation: 12,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
                         Icons.fingerprint,
-                        size: 70,
+                        size: 80,
                         color: Colors.blue,
                       ),
 
                       const SizedBox(height: 10),
 
                       const Text(
-                        "FingerID Login System",
+                        "FingerID System",
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -164,11 +141,9 @@ class _FingerHomePageState extends State<FingerHomePage> {
 
                       TextField(
                         controller: nameCtrl,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: "Full Name",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          border: OutlineInputBorder(),
                         ),
                       ),
 
@@ -176,11 +151,9 @@ class _FingerHomePageState extends State<FingerHomePage> {
 
                       TextField(
                         controller: emailCtrl,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: "Email",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          border: OutlineInputBorder(),
                         ),
                       ),
 
@@ -200,7 +173,7 @@ class _FingerHomePageState extends State<FingerHomePage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: login,
+                          onPressed: goToLogin,
                           icon: const Icon(Icons.fingerprint),
                           label: const Text("Login with Fingerprint"),
                         ),
@@ -214,11 +187,8 @@ class _FingerHomePageState extends State<FingerHomePage> {
                           style: const TextStyle(color: Colors.green),
                         ),
 
-                      if (loginError.isNotEmpty)
-                        Text(
-                          loginError,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                      if (error.isNotEmpty)
+                        Text(error, style: const TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
