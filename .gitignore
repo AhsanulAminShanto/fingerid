@@ -1,0 +1,14 @@
+# ASP.NET
+bin/
+obj/
+.vs/
+
+# Flutter
+**/build/
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# OS
+.DS_Store
