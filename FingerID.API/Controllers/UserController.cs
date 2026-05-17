@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using FingerID.API.Data;
 using FingerID.API.Models;
 using FingerID.API.Models.DTOs;
@@ -50,7 +51,30 @@ namespace FingerID.API.Controllers
             return Ok(new
             {
                 message = "User registered successfully",
-                userId = user.UserId
+                userId = user.UserId,
+                name = user.Name,
+                email = user.Email
+            });
+        }
+
+        // =========================
+        // GET USER BY ID
+        // =========================
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserById(Guid id)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.UserId == id);
+
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            return Ok(new
+            {
+                userId = user.UserId,
+                name = user.Name,
+                email = user.Email,
+                createdAt = user.CreatedAt
             });
         }
     }

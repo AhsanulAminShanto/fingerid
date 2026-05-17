@@ -15,9 +15,9 @@ class FingerIDApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const FingerHomePage(),
+      home: FingerHomePage(),
     );
   }
 }
@@ -103,7 +103,7 @@ class _FingerHomePageState extends State<FingerHomePage> {
     }
   }
 
-  // ================= UPDATED LOGIN FUNCTION =================
+  // ================= LOGIN =================
   Future<void> loginWithFingerprint() async {
     if (userId == null) {
       setState(() => error = "Please register first");
@@ -133,11 +133,11 @@ class _FingerHomePageState extends State<FingerHomePage> {
       final data = jsonDecode(res.body);
 
       setState(() {
-        status = "Login Success 🎉 ${data["message"]}";
+        status = data["message"] ?? "Login Success 🎉";
         error = "";
       });
 
-      // 🔥 NAVIGATE TO HOME PAGE (NEW PART)
+      // ================= NAVIGATE =================
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

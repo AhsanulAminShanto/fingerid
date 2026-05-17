@@ -43,7 +43,9 @@ namespace FingerID.API.Controllers
             return Ok(new
             {
                 message = $"Welcome {user.Name}",
-                userId = user.UserId
+                userId = user.UserId,
+                name = user.Name,
+                email = user.Email
             });
         }
     }
