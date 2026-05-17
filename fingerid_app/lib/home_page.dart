@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'main.dart';
 
@@ -79,7 +80,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget socialTile({
-    required IconData icon,
+    required dynamic icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
@@ -95,7 +96,10 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 40),
+            // support both built-in IconData and FontAwesome icons
+            icon is IconData
+                ? Icon(icon, color: color, size: 40)
+                : FaIcon(icon, color: color, size: 40),
             const SizedBox(height: 10),
             Text(label, style: const TextStyle(color: Colors.white70)),
           ],
@@ -110,10 +114,10 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: const Color(0xff0f172a),
 
       appBar: AppBar(
-        title: const Text("Home"),
-        backgroundColor: const Color.fromARGB(255, 212, 213, 214),
+        title: const Text("Home", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color.fromARGB(255, 48, 83, 119),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => goBackToLogin(context),
         ),
       ),
@@ -158,6 +162,7 @@ class _HomePageState extends State<HomePage> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                       children: [
+                        // ================= CORE SOCIAL =================
                         socialTile(
                           icon: Icons.work,
                           label: "LinkedIn",
@@ -191,6 +196,112 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.blueAccent,
                           onTap: () =>
                               openSmartLink("", "https://facebook.com"),
+                        ),
+
+                        // ================= MESSAGING =================
+                        socialTile(
+                          icon: Icons.chat,
+                          label: "WhatsApp",
+                          color: Colors.green,
+                          onTap: () => openSmartLink(
+                            "whatsapp://send?text=Hello",
+                            "https://wa.me/",
+                          ),
+                        ),
+
+                        socialTile(
+                          icon: Icons.camera_alt,
+                          label: "Instagram",
+                          color: Colors.pink,
+                          onTap: () => openSmartLink(
+                            "instagram://user",
+                            "https://www.instagram.com/",
+                          ),
+                        ),
+
+                        socialTile(
+                          icon: Icons.alternate_email,
+                          label: "X (Twitter)",
+                          color: Colors.black,
+                          onTap: () => openSmartLink(
+                            "twitter://",
+                            "https://twitter.com",
+                          ),
+                        ),
+
+                        // ================= PROFESSIONAL =================
+                        socialTile(
+                          icon: Icons.video_library,
+                          label: "YouTube",
+                          color: Colors.red,
+                          onTap: () => openSmartLink(
+                            "youtube://",
+                            "https://youtube.com",
+                          ),
+                        ),
+
+                        socialTile(
+                          icon: Icons.telegram,
+                          label: "Telegram",
+                          color: Colors.lightBlue,
+                          onTap: () => openSmartLink(
+                            "tg://resolve",
+                            "https://telegram.org",
+                          ),
+                        ),
+
+                        socialTile(
+                          icon: Icons.discord,
+                          label: "Discord",
+                          color: Colors.indigo,
+                          onTap: () => openSmartLink(
+                            "discord://",
+                            "https://discord.com",
+                          ),
+                        ),
+
+                        // ================= DEV =================
+                        socialTile(
+                          icon: Icons.flutter_dash,
+                          label: "Stack Overflow",
+                          color: Colors.orange,
+                          onTap: () =>
+                              openSmartLink("", "https://stackoverflow.com"),
+                        ),
+
+                        // ================= GLOBAL =================
+                        // socialTile(
+                        //   icon: Icons.music_note,
+                        //   label: "TikTok",
+                        //   color: Colors.black,
+                        //   onTap: () => openSmartLink(
+                        //     "tiktok://",
+                        //     "https://www.tiktok.com",
+                        //   ),
+                        // ),
+                        socialTile(
+                          icon: Icons.public,
+                          label: "Reddit",
+                          color: Colors.orangeAccent,
+                          onTap: () => openSmartLink("", "https://reddit.com"),
+                        ),
+
+                        socialTile(
+                          icon: Icons.snapchat,
+                          label: "Snapchat",
+                          color: Colors.yellow,
+                          onTap: () => openSmartLink(
+                            "snapchat://",
+                            "https://snapchat.com",
+                          ),
+                        ),
+
+                        socialTile(
+                          icon: FontAwesomeIcons.pinterest,
+                          label: "Pinterest",
+                          color: Colors.redAccent,
+                          onTap: () =>
+                              openSmartLink("", "https://pinterest.com"),
                         ),
                       ],
                     ),
