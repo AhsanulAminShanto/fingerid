@@ -8,6 +8,13 @@
     <uses-feature
         android:name="android.hardware.fingerprint"
         android:required="false" />
+    <!-- ✅ MUST BE OUTSIDE APPLICATION -->
+    <queries>
+        <package android:name="com.bKash.customerapp"/>
+        <package android:name="com.dutchbanglabank.cellfin"/>
+        <package android:name="com.konasl.nagad"/>
+        <package android:name="com.dbbl.mbs.apps.main"/>
+    </queries>
 
     <application
         android:name="${applicationName}"
@@ -38,6 +45,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
 
     </application>
 </manifest>

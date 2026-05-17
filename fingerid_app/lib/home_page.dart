@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'personal_banking_page.dart';
 import 'main.dart';
 
 class HomePage extends StatefulWidget {
@@ -302,6 +302,20 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.redAccent,
                           onTap: () =>
                               openSmartLink("", "https://pinterest.com"),
+                        ),
+                        socialTile(
+                          icon: Icons.account_balance,
+                          label: "Personal Banking",
+                          color: Colors.teal,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const PersonalBankingPage(),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
